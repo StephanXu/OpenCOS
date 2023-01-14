@@ -26,7 +26,7 @@ func GetCacheUrlHandler(c *gin.Context) {
 }
 
 func GetCacheUrlHandlerByDefault(c *gin.Context) {
-	reqUrl := "/library" + c.Param("reqUrl")
+	reqUrl := "/library/parts" + c.Param("reqUrl")
 	sourceName := "aliyunpan"
 	fmt.Printf("sourceName: %s, reqUrl: %s\n", sourceName, reqUrl)
 	s := source.Manager.GetSource(sourceName)

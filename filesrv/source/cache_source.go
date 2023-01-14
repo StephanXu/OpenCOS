@@ -23,6 +23,7 @@ type (
 		RestoreSource(items *[]CacheItem)
 		CachedFileSize() int
 		MappedFileSize() int
+		HasMapping(reqUrl string) bool
 		Restore(context *CacheSourceContext) error
 	}
 
@@ -106,6 +107,15 @@ func (p *SourcesManager) MappingFile(reqFileUrl string, localName string, hashes
 		}
 	}
 	return nil
+}
+
+func (p *SourcesManager) HasMapping(reqFileUrl string) bool {
+	for _, cs := range p.sources {
+		if h := cs.HasMapping(reqFileUrl); !h {
+			return false
+		}
+	}
+	return true
 }
 
 func (p *SourcesManager) RegisterSource(sourceName string, s CacheSource) {

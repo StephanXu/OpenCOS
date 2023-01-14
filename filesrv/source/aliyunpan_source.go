@@ -122,3 +122,8 @@ func (p *AliyunpanSource) RestoreSource(items *[]CacheItem) {
 func (p *AliyunpanSource) MappedFileSize() int { return len(p.mapping) }
 
 func (p *AliyunpanSource) CachedFileSize() int { return len(p.Context.CachedItems) }
+
+func (p *AliyunpanSource) HasMapping(reqUrl string) bool {
+	_, ok := p.mapping[reqUrl]
+	return ok
+}

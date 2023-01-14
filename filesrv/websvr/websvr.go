@@ -27,8 +27,9 @@ func Run() {
 	r := gin.Default()
 	r.Use(logMiddleWare())
 	r.GET("/cache/:source/*reqUrl", GetCacheUrlHandler)
-	r.GET("/library/*reqUrl", GetCacheUrlHandlerByDefault)
+	r.GET("/library/parts/*reqUrl", GetCacheUrlHandlerByDefault)
 	r.POST("/cache/mapping", MappingFile)
+	r.GET("/library/sections/:id/*proxyPath", proxy)
 	if err := r.Run(":3000"); err != nil {
 		fmt.Printf("startup service failed, err: %v\n", err)
 		return
