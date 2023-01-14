@@ -45,7 +45,7 @@ func (p *SourcesManager) Restore(context *CacheSourceContext) error {
 	} else {
 		return errors.New("SourceTypeNotSupported")
 	}
-	source := *p.GetSource(context.Name)
+	source := p.GetSource(context.Name)
 	if err := source.Restore(context); err != nil {
 		return err
 	}
@@ -125,9 +125,9 @@ func (p *SourcesManager) RegisterSource(sourceName string, s CacheSource) {
 	p.sources[sourceName] = s
 }
 
-func (p *SourcesManager) GetSource(sourceName string) *CacheSource {
+func (p *SourcesManager) GetSource(sourceName string) CacheSource {
 	if v, ok := p.sources[sourceName]; ok {
-		return &v
+		return v
 	}
 	return nil
 }
