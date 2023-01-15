@@ -13,6 +13,7 @@ type AppContext struct {
 	DefaultSource string                      `json:"defaultSource"`
 	PlexHost      string                      `json:"plexHost"`
 	LocalHash     string                      `json:"localHash"`
+	Port          int32                       `json:"port"`
 	Sources       []source.CacheSourceContext `json:"sources"`
 }
 

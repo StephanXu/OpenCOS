@@ -5,6 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
+	"xxtuitui.com/filesvr/config"
 )
 
 func logMiddleWare() gin.HandlerFunc {
@@ -31,7 +32,7 @@ func Run() {
 	r.GET("/library/sections/:id/*proxyPath", proxy)
 	r.GET("/library/metadata/:id", proxy)
 	r.POST("/cache/mapping", MappingFile)
-	if err := r.Run(":3000"); err != nil {
+	if err := r.Run(fmt.Sprintf(":%d", config.App.Port)); err != nil {
 		fmt.Printf("startup service failed, err: %v\n", err)
 		return
 	}
