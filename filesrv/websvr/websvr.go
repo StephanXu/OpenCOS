@@ -26,10 +26,11 @@ func logMiddleWare() gin.HandlerFunc {
 func Run() {
 	r := gin.Default()
 	r.Use(logMiddleWare())
-	r.GET("/cache/:source/*reqUrl", GetCacheUrlHandler)
-	r.GET("/library/parts/*reqUrl", GetCacheUrlHandlerByDefault)
-	r.POST("/cache/mapping", MappingFile)
+	r.GET("/cache/:source/*reqUrl", getCacheUrlHandler)
+	r.GET("/library/parts/*reqUrl", getCacheUrlHandlerByDefault)
 	r.GET("/library/sections/:id/*proxyPath", proxy)
+	r.GET("/library/metadata/:id", proxy)
+	r.POST("/cache/mapping", MappingFile)
 	if err := r.Run(":3000"); err != nil {
 		fmt.Printf("startup service failed, err: %v\n", err)
 		return

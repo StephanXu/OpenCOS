@@ -5,7 +5,6 @@ import (
 	"compress/flate"
 	"compress/gzip"
 	"encoding/json"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -17,6 +16,7 @@ import (
 	"github.com/Jeffail/gabs/v2"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
+	"xxtuitui.com/filesvr/config"
 	"xxtuitui.com/filesvr/source"
 )
 
@@ -50,7 +50,7 @@ func refreshFileHashes(filename string) error {
 
 func extendsLibrary(content []byte) []byte {
 	if fileHashes == nil || len(fileHashes) == 0 {
-		refreshFileHashes("localhash.json")
+		refreshFileHashes(config.App.LocalHash)
 	}
 	document, err := gabs.ParseJSON(content)
 	if err != nil {
@@ -65,32 +65,33 @@ func extendsLibrary(content []byte) []byte {
 			}
 			filename, ok := media.Path("Part.0.file").Data().(string)
 			if !ok {
-				fmt.Printf("\"wtf\": %v\n", "wtf")
 				continue
 			}
 			requrl, ok := media.Path("Part.0.key").Data().(string)
 			if !ok {
-				fmt.Printf("\"wth\": %v\n", "wth")
+				continue
+			}
+
+			hashes, ok := fileHashes[filename]
+			if !ok {
 				continue
 			}
 			if source.Manager.HasMapping(requrl) {
 				continue
 			}
-			if hashes, ok := fileHashes[filename]; ok {
-				err := source.Manager.MappingFile(requrl, filename, hashes.Hashes)
-				if err != nil {
-					logrus.WithFields(logrus.Fields{
-						"reqUrl":   requrl,
-						"filename": filename,
-						"hashes":   hashes.Hashes,
-					}).Error("MappingFileFailed")
-				} else {
-					logrus.WithFields(logrus.Fields{
-						"reqUrl":   requrl,
-						"filename": filename,
-						"hashes":   hashes.Hashes,
-					}).Info("MappingFileSuccessFromRequest")
-				}
+			err := source.Manager.MappingFile(requrl, filename, hashes.Hashes)
+			if err != nil {
+				logrus.WithFields(logrus.Fields{
+					"reqUrl":   requrl,
+					"filename": filename,
+					"hashes":   hashes.Hashes,
+				}).Error("MappingFileFailed")
+			} else {
+				logrus.WithFields(logrus.Fields{
+					"reqUrl":   requrl,
+					"filename": filename,
+					"hashes":   hashes.Hashes,
+				}).Info("MappingFileSuccessFromRequest")
 			}
 		}
 		for _, item := range items.Children() {
@@ -141,7 +142,7 @@ func rewriteBody(resp *http.Response) (err error) {
 }
 
 func proxy(c *gin.Context) {
-	remote, err := url.Parse("http://127.0.0.1:32400")
+	remote, err := url.Parse(config.App.PlexHost)
 	if err != nil {
 		panic(err)
 	}

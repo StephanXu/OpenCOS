@@ -7,10 +7,11 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
+	"xxtuitui.com/filesvr/config"
 	"xxtuitui.com/filesvr/source"
 )
 
-func GetCacheUrlHandler(c *gin.Context) {
+func getCacheUrlHandler(c *gin.Context) {
 	reqUrl := c.Param("reqUrl")
 	sourceName := c.Param("source")
 
@@ -41,9 +42,9 @@ func GetCacheUrlHandler(c *gin.Context) {
 	c.Redirect(307, dest)
 }
 
-func GetCacheUrlHandlerByDefault(c *gin.Context) {
+func getCacheUrlHandlerByDefault(c *gin.Context) {
 	reqUrl := "/library/parts" + c.Param("reqUrl")
-	sourceName := "aliyunpan"
+	sourceName := config.App.DefaultSource
 
 	s := source.Manager.GetSource(sourceName)
 	if s == nil {
@@ -60,7 +61,7 @@ func GetCacheUrlHandlerByDefault(c *gin.Context) {
 			"sourceName": sourceName,
 			"reqUrl":     reqUrl,
 		}).Warn("CacheDegradation")
-		remote, err := url.Parse("http://127.0.0.1:32400")
+		remote, err := url.Parse(config.App.PlexHost)
 		if err != nil {
 			panic(err)
 		}

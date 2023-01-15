@@ -9,8 +9,11 @@ import (
 )
 
 type AppContext struct {
-	ContextFile string                      `json:"contextFile"`
-	Sources     []source.CacheSourceContext `json:"sources"`
+	ContextFile   string                      `json:"contextFile"`
+	DefaultSource string                      `json:"defaultSource"`
+	PlexHost      string                      `json:"plexHost"`
+	LocalHash     string                      `json:"localHash"`
+	Sources       []source.CacheSourceContext `json:"sources"`
 }
 
 var App AppContext
