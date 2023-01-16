@@ -88,12 +88,32 @@ func saveResult(obj interface{}, filename string) error {
 
 func main() {
 	var res []FileHash
-	fileList, err := listFile("")
+	restoredFiles := make(map[string]FileHash)
+	if b, err := os.ReadFile("localhash.json"); err == nil {
+		var restoredList []FileHash
+		if err := json.Unmarshal(b, &restoredList); err == nil {
+			for _, item := range restoredList {
+				restoredFiles[item.Filename] = item
+			}
+			fmt.Printf("Restored %d hash of local files.", len(restoredFiles))
+		} else {
+			fmt.Printf("Restore hashes failed: %v\n", err)
+		}
+	} else {
+		fmt.Printf("Can't find cache of hashes.")
+	}
+
+	fileList, err := listFile("E:\\Videos")
 	if err != nil {
 		fmt.Printf("List file failed: %v\n", err)
 		return
 	}
 	for _, filename := range fileList {
+		if restored, is_restored := restoredFiles[filename]; is_restored {
+			res = append(res, restored)
+			fmt.Printf("Restored: %v\n", filename)
+			continue
+		}
 		hash, err := MultipleHash(filename)
 		if err != nil {
 			fmt.Printf("Hash file %s failed: %v", filename, err)
@@ -101,7 +121,7 @@ func main() {
 		}
 		res = append(res, FileHash{Filename: filename, Hashes: hash})
 		fmt.Printf("Produced: %v\n", filename)
-		saveResult(res, "res.json")
+		saveResult(res, "localhash.json")
 	}
 
 }

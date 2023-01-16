@@ -9,6 +9,8 @@ import (
 	"github.com/mitchellh/mapstructure"
 	"github.com/sirupsen/logrus"
 	"github.com/tickstep/aliyunpan-api/aliyunpan"
+	"github.com/tickstep/aliyunpan-api/aliyunpan/apierror"
+	"xxtuitui.com/filesvr/config"
 )
 
 type (
@@ -85,6 +87,23 @@ func (p *AliyunpanSource) GetUrl(reqFileUrl string) (string, error) {
 	}
 	res, err := p.client.GetFileDownloadUrl(&query)
 	if err != nil {
+		if err.ErrCode() == apierror.ApiCodeAccessTokenInvalid {
+			logrus.Info("AliyunpanApiTokenExpired")
+			if err := p.Init(p.Context.RefreshToken); err == nil {
+				config.SaveContext()
+				logrus.WithFields(logrus.Fields{
+					"reqUrl": reqFileUrl,
+				}).Info("AliyunpanRefreshTokenRetry")
+				if res, err = p.client.GetFileDownloadUrl(&query); err == nil {
+					return res.Url, nil
+				}
+			}
+		}
+		logrus.WithFields(logrus.Fields{
+			"reqUrl":  reqFileUrl,
+			"errCode": err.ErrCode(),
+			"err":     err.Error(),
+		}).Info("AliyunpanGetUrlFailed")
 		return "", err
 	}
 	// return strings.Replace(res.Url, "cn-beijing-data.aliyundrive.net", "xxalistorage.xiaoxutuitui.com", 1), nil
@@ -122,3 +141,8 @@ func (p *AliyunpanSource) RestoreSource(items *[]CacheItem) {
 func (p *AliyunpanSource) MappedFileSize() int { return len(p.mapping) }
 
 func (p *AliyunpanSource) CachedFileSize() int { return len(p.Context.CachedItems) }
+
+func (p *AliyunpanSource) HasMapping(reqUrl string) bool {
+	_, ok := p.mapping[reqUrl]
+	return ok
+}

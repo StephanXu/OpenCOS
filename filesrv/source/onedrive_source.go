@@ -121,3 +121,8 @@ func (p *OneDriveSource) RestoreSource(items *[]CacheItem) {
 func (p *OneDriveSource) MappedFileSize() int { return len(p.mapping) }
 
 func (p *OneDriveSource) CachedFileSize() int { return len(p.Context.CachedItems) }
+
+func (p *OneDriveSource) HasMapping(reqUrl string) bool {
+	_, ok := p.mapping[reqUrl]
+	return ok
+}

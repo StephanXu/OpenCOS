@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"io/ioutil"
 
+	"github.com/mitchellh/mapstructure"
 	"github.com/sirupsen/logrus"
+	"xxtuitui.com/filesvr/config"
 )
 
 type (
@@ -16,6 +18,8 @@ type (
 		Context interface{} `json:"context"`
 	}
 
+	CacheSourceContextList = []CacheSourceContext
+
 	CacheSource interface {
 		GetUrl(reqFileUrl string) (string, error)
 		MappingFile(reqFileUrl string, localName string, hash map[string]string) error
@@ -23,6 +27,7 @@ type (
 		RestoreSource(items *[]CacheItem)
 		CachedFileSize() int
 		MappedFileSize() int
+		HasMapping(reqUrl string) bool
 		Restore(context *CacheSourceContext) error
 	}
 
@@ -32,6 +37,31 @@ type (
 )
 
 var Manager SourcesManager
+
+func RestoreFromContext(context *config.AppContext) {
+	var contextList CacheSourceContextList
+	mapstructure.Decode(context.Sources, &contextList)
+	context.Sources = &contextList
+
+	for i := range contextList {
+		sourceContext := &contextList[i]
+		if err := Manager.Restore(sourceContext); err != nil {
+			logrus.WithFields(logrus.Fields{
+				"sourceName": sourceContext.Name,
+				"sourceType": sourceContext.Type,
+				"err":        err,
+			}).Error("RestoreSourceFailed")
+			continue
+		}
+		if err := config.SaveContext(); err != nil {
+			logrus.WithFields(logrus.Fields{
+				"contextFilename": config.App.ContextFile,
+				"err":             err,
+			}).Error("SaveContextFailed")
+			continue
+		}
+	}
+}
 
 func (p *SourcesManager) Restore(context *CacheSourceContext) error {
 	if p.HasSource(context.Name) {
@@ -44,7 +74,7 @@ func (p *SourcesManager) Restore(context *CacheSourceContext) error {
 	} else {
 		return errors.New("SourceTypeNotSupported")
 	}
-	source := *p.GetSource(context.Name)
+	source := p.GetSource(context.Name)
 	if err := source.Restore(context); err != nil {
 		return err
 	}
@@ -108,6 +138,15 @@ func (p *SourcesManager) MappingFile(reqFileUrl string, localName string, hashes
 	return nil
 }
 
+func (p *SourcesManager) HasMapping(reqFileUrl string) bool {
+	for _, cs := range p.sources {
+		if h := cs.HasMapping(reqFileUrl); !h {
+			return false
+		}
+	}
+	return true
+}
+
 func (p *SourcesManager) RegisterSource(sourceName string, s CacheSource) {
 	if p.sources == nil {
 		p.sources = make(map[string]CacheSource)
@@ -115,9 +154,9 @@ func (p *SourcesManager) RegisterSource(sourceName string, s CacheSource) {
 	p.sources[sourceName] = s
 }
 
-func (p *SourcesManager) GetSource(sourceName string) *CacheSource {
+func (p *SourcesManager) GetSource(sourceName string) CacheSource {
 	if v, ok := p.sources[sourceName]; ok {
-		return &v
+		return v
 	}
 	return nil
 }
