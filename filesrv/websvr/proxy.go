@@ -102,6 +102,9 @@ func extendsLibrary(content []byte) []byte {
 }
 
 func rewriteBody(resp *http.Response) (err error) {
+	if resp.Header.Get("Content-Type") != "application/json" {
+		return nil
+	}
 	var bodyReader io.Reader
 	switch resp.Header.Get("Content-Encoding") {
 	case "gzip":
