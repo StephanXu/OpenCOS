@@ -10,6 +10,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/tickstep/aliyunpan-api/aliyunpan"
 	"github.com/tickstep/aliyunpan-api/aliyunpan/apierror"
+	"xxtuitui.com/filesvr/config"
 )
 
 type (
@@ -86,9 +87,17 @@ func (p *AliyunpanSource) GetUrl(reqFileUrl string) (string, error) {
 	}
 	res, err := p.client.GetFileDownloadUrl(&query)
 	if err != nil {
-		if err.ErrCode() == apierror.ApiCodeTokenExpiredCode {
+		if err.ErrCode() == apierror.ApiCodeAccessTokenInvalid {
 			logrus.Info("AliyunpanApiTokenExpired")
-			p.Init(p.Context.RefreshToken)
+			if err := p.Init(p.Context.RefreshToken); err == nil {
+				config.SaveContext()
+				logrus.WithFields(logrus.Fields{
+					"reqUrl": reqFileUrl,
+				}).Info("AliyunpanRefreshTokenRetry")
+				if res, err = p.client.GetFileDownloadUrl(&query); err == nil {
+					return res.Url, nil
+				}
+			}
 		}
 		logrus.WithFields(logrus.Fields{
 			"reqUrl":  reqFileUrl,
