@@ -9,6 +9,7 @@ import (
 	"github.com/mitchellh/mapstructure"
 	"github.com/sirupsen/logrus"
 	"github.com/tickstep/aliyunpan-api/aliyunpan"
+	"github.com/tickstep/aliyunpan-api/aliyunpan/apierror"
 )
 
 type (
@@ -85,6 +86,15 @@ func (p *AliyunpanSource) GetUrl(reqFileUrl string) (string, error) {
 	}
 	res, err := p.client.GetFileDownloadUrl(&query)
 	if err != nil {
+		if err.ErrCode() == apierror.ApiCodeTokenExpiredCode {
+			logrus.Info("AliyunpanApiTokenExpired")
+			p.Init(p.Context.RefreshToken)
+		}
+		logrus.WithFields(logrus.Fields{
+			"reqUrl":  reqFileUrl,
+			"errCode": err.ErrCode(),
+			"err":     err.Error(),
+		}).Info("AliyunpanGetUrlFailed")
 		return "", err
 	}
 	// return strings.Replace(res.Url, "cn-beijing-data.aliyundrive.net", "xxalistorage.xiaoxutuitui.com", 1), nil
