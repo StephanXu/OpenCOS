@@ -40,7 +40,7 @@ var Manager SourcesManager
 
 func RestoreFromContext(context *config.AppContext) {
 	var contextList CacheSourceContextList
-	mapstructure.Decode(context.Sources, contextList)
+	mapstructure.Decode(context.Sources, &contextList)
 	context.Sources = &contextList
 
 	for i := range contextList {
