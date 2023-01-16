@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"io/ioutil"
 
+	"github.com/mitchellh/mapstructure"
 	"github.com/sirupsen/logrus"
+	"xxtuitui.com/filesvr/config"
 )
 
 type (
@@ -15,6 +17,8 @@ type (
 		Type    string      `json:"type"`
 		Context interface{} `json:"context"`
 	}
+
+	CacheSourceContextList = []CacheSourceContext
 
 	CacheSource interface {
 		GetUrl(reqFileUrl string) (string, error)
@@ -33,6 +37,31 @@ type (
 )
 
 var Manager SourcesManager
+
+func RestoreFromContext(context *config.AppContext) {
+	var contextList CacheSourceContextList
+	mapstructure.Decode(context.Sources, contextList)
+	context.Sources = &contextList
+
+	for i := range contextList {
+		sourceContext := &contextList[i]
+		if err := Manager.Restore(sourceContext); err != nil {
+			logrus.WithFields(logrus.Fields{
+				"sourceName": sourceContext.Name,
+				"sourceType": sourceContext.Type,
+				"err":        err,
+			}).Error("RestoreSourceFailed")
+			continue
+		}
+		if err := config.SaveContext(); err != nil {
+			logrus.WithFields(logrus.Fields{
+				"contextFilename": config.App.ContextFile,
+				"err":             err,
+			}).Error("SaveContextFailed")
+			continue
+		}
+	}
+}
 
 func (p *SourcesManager) Restore(context *CacheSourceContext) error {
 	if p.HasSource(context.Name) {

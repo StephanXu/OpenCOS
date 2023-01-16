@@ -24,25 +24,6 @@ func main() {
 		}).Fatal("LoadContextFailed")
 		return
 	}
-
-	for i := range config.App.Sources {
-		context := &config.App.Sources[i]
-		if err := source.Manager.Restore(context); err != nil {
-			logrus.WithFields(logrus.Fields{
-				"sourceName": context.Name,
-				"sourceType": context.Type,
-				"err":        err,
-			}).Error("RestoreSourceFailed")
-			continue
-		}
-		if err := config.SaveContext(); err != nil {
-			logrus.WithFields(logrus.Fields{
-				"contextFilename": config.App.ContextFile,
-				"err":             err,
-			}).Error("SaveContextFailed")
-			continue
-		}
-	}
-
+	source.RestoreFromContext(&config.App)
 	websvr.Run()
 }

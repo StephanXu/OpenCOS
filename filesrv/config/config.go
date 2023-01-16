@@ -4,17 +4,15 @@ import (
 	"encoding/json"
 	"errors"
 	"os"
-
-	"xxtuitui.com/filesvr/source"
 )
 
 type AppContext struct {
-	ContextFile   string                      `json:"contextFile"`
-	DefaultSource string                      `json:"defaultSource"`
-	PlexHost      string                      `json:"plexHost"`
-	LocalHash     string                      `json:"localHash"`
-	Port          int32                       `json:"port"`
-	Sources       []source.CacheSourceContext `json:"sources"`
+	ContextFile   string      `json:"contextFile"`
+	DefaultSource string      `json:"defaultSource"`
+	PlexHost      string      `json:"plexHost"`
+	LocalHash     string      `json:"localHash"`
+	Port          int32       `json:"port"`
+	Sources       interface{} `json:"sources"`
 }
 
 var App AppContext
