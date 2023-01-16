@@ -30,7 +30,7 @@ func Run() {
 	r.GET("/cache/:source/*reqUrl", getCacheUrlHandler)
 	r.GET("/library/parts/*reqUrl", getCacheUrlHandlerByDefault)
 	r.GET("/library/sections/:id/*proxyPath", proxy)
-	r.GET("/library/metadata/:id", proxy)
+	r.GET("/library/metadata/:id/*proxyPath", proxy)
 	r.POST("/cache/mapping", MappingFile)
 	if err := r.Run(fmt.Sprintf(":%d", config.App.Port)); err != nil {
 		fmt.Printf("startup service failed, err: %v\n", err)
