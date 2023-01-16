@@ -98,7 +98,6 @@ func extendsLibrary(content []byte) []byte {
 			metaData.ArrayAppend(item, "Media")
 		}
 	}
-	ioutil.WriteFile("okokok.json", document.BytesIndent("", "  "), 0666)
 	return document.Bytes()
 }
 
