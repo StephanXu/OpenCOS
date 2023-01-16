@@ -83,7 +83,8 @@ func getCacheUrlHandlerByDefault(c *gin.Context) {
 		logrus.WithFields(logrus.Fields{
 			"sourceName": sourceName,
 			"reqUrl":     reqUrl,
-		}).Info("MappingNotFound")
+			"err":        err,
+		}).Info("GetMappingUrlFailed")
 		c.Status(http.StatusNotFound)
 		return
 	}
