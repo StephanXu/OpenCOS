@@ -64,6 +64,20 @@ func (p *AliyunpanSource) Init(refreshToken string) error {
 	return nil
 }
 
+func (p *AliyunpanSource) updateToken(refreshToken string) error {
+	webToken, err := aliyunpan.GetAccessTokenFromRefreshToken(refreshToken)
+	if err != nil {
+		return err
+	}
+	p.Context.RefreshToken = webToken.RefreshToken
+	p.client.UpdateToken(*webToken)
+	logrus.WithFields(logrus.Fields{
+		"originToken":  refreshToken,
+		"updatedToken": p.Context.RefreshToken,
+	})
+	return nil
+}
+
 func (p *AliyunpanSource) MappingFile(reqFileUrl string, localName string, hashes map[string]string) error {
 	for _, f := range p.Context.CachedItems {
 		if !f.IsHashEqual(hashes) {
@@ -89,13 +103,25 @@ func (p *AliyunpanSource) GetUrl(reqFileUrl string) (string, error) {
 	if err != nil {
 		if err.ErrCode() == apierror.ApiCodeAccessTokenInvalid {
 			logrus.Info("AliyunpanApiTokenExpired")
+			logrus.WithFields(logrus.Fields{
+				"reqUrl":    reqFileUrl,
+				"oldClient": &p.client,
+			}).Info("AliyunpanRefreshTokenReady")
 			if err := p.Init(p.Context.RefreshToken); err == nil {
 				config.SaveContext()
 				logrus.WithFields(logrus.Fields{
-					"reqUrl": reqFileUrl,
+					"reqUrl":    reqFileUrl,
+					"newClient": &p.client,
 				}).Info("AliyunpanRefreshTokenRetry")
-				if res, err = p.client.GetFileDownloadUrl(&query); err == nil {
+				if res, err := p.client.GetFileDownloadUrl(&query); err == nil {
 					return res.Url, nil
+				} else {
+					logrus.WithFields(logrus.Fields{
+						"reqUrl":  reqFileUrl,
+						"errCode": err.ErrCode(),
+						"err":     err.Error(),
+					}).Info("AliyunpanGetUrlRetryFailed")
+					return "", err
 				}
 			}
 		}
