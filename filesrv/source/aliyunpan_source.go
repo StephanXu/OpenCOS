@@ -64,6 +64,20 @@ func (p *AliyunpanSource) Init(refreshToken string) error {
 	return nil
 }
 
+func (p *AliyunpanSource) updateToken(refreshToken string) error {
+	webToken, err := aliyunpan.GetAccessTokenFromRefreshToken(refreshToken)
+	if err != nil {
+		return err
+	}
+	p.Context.RefreshToken = webToken.RefreshToken
+	p.client.UpdateToken(*webToken)
+	logrus.WithFields(logrus.Fields{
+		"originToken":  refreshToken,
+		"updatedToken": p.Context.RefreshToken,
+	})
+	return nil
+}
+
 func (p *AliyunpanSource) MappingFile(reqFileUrl string, localName string, hashes map[string]string) error {
 	for _, f := range p.Context.CachedItems {
 		if !f.IsHashEqual(hashes) {
@@ -94,7 +108,7 @@ func (p *AliyunpanSource) GetUrl(reqFileUrl string) (string, error) {
 				logrus.WithFields(logrus.Fields{
 					"reqUrl": reqFileUrl,
 				}).Info("AliyunpanRefreshTokenRetry")
-				if res, err = p.client.GetFileDownloadUrl(&query); err == nil {
+				if res, err := p.client.GetFileDownloadUrl(&query); err == nil {
 					return res.Url, nil
 				}
 			}
@@ -106,7 +120,6 @@ func (p *AliyunpanSource) GetUrl(reqFileUrl string) (string, error) {
 		}).Info("AliyunpanGetUrlFailed")
 		return "", err
 	}
-	// return strings.Replace(res.Url, "cn-beijing-data.aliyundrive.net", "xxalistorage.xiaoxutuitui.com", 1), nil
 	return res.Url, nil
 }
 
