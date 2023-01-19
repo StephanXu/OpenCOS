@@ -105,23 +105,16 @@ func (p *AliyunpanSource) GetUrl(reqFileUrl string) (string, error) {
 			logrus.Info("AliyunpanApiTokenExpired")
 			logrus.WithFields(logrus.Fields{
 				"reqUrl":    reqFileUrl,
-				"oldClient": &p.client,
+				"oldClient": p.client,
 			}).Info("AliyunpanRefreshTokenReady")
 			if err := p.Init(p.Context.RefreshToken); err == nil {
 				config.SaveContext()
 				logrus.WithFields(logrus.Fields{
 					"reqUrl":    reqFileUrl,
-					"newClient": &p.client,
+					"newClient": p.client,
 				}).Info("AliyunpanRefreshTokenRetry")
-				if res, err := p.client.GetFileDownloadUrl(&query); err == nil {
+				if res, err = p.client.GetFileDownloadUrl(&query); err == nil {
 					return res.Url, nil
-				} else {
-					logrus.WithFields(logrus.Fields{
-						"reqUrl":  reqFileUrl,
-						"errCode": err.ErrCode(),
-						"err":     err.Error(),
-					}).Info("AliyunpanGetUrlRetryFailed")
-					return "", err
 				}
 			}
 		}
@@ -129,6 +122,7 @@ func (p *AliyunpanSource) GetUrl(reqFileUrl string) (string, error) {
 			"reqUrl":  reqFileUrl,
 			"errCode": err.ErrCode(),
 			"err":     err.Error(),
+			"resUrl":  res.Url,
 		}).Info("AliyunpanGetUrlFailed")
 		return "", err
 	}
