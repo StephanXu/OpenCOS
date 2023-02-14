@@ -14,25 +14,27 @@ type (
 type ApiCode int
 
 type ApiError struct {
-	Err  string
-	Code ApiCode
+	Err     string
+	Code    ApiCode
+	Message string
 }
 
 const (
+	UnknownError               ApiCode = -1
 	InvalidAuthenticationToken ApiCode = 1000
 )
 
 func (p ApiError) Error() string {
-	return p.Err
+	return p.Err + ": " + p.Message
 }
 
-func NewApiError(code ApiCode, message string) *ApiError {
-	return &ApiError{message, code}
+func NewApiError(code ApiCode, errCode string, message string) *ApiError {
+	return &ApiError{errCode, code, message}
 }
 
 func (p *MSGraphClient) ParseError(e *ErrorWrapper) *ApiError {
 	if e.Error.Code == "InvalidAuthenticationToken" {
-		return NewApiError(InvalidAuthenticationToken, e.Error.Code)
+		return NewApiError(InvalidAuthenticationToken, e.Error.Code, e.Error.Message)
 	}
-	return nil
+	return NewApiError(UnknownError, e.Error.Code, e.Error.Message)
 }
