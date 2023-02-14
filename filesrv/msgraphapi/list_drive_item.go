@@ -138,24 +138,24 @@ func (p *MSGraphClient) ListFileRecursiveByPath(path string) ([]DriveItem, error
 	return p.listFileRecursive(false, path)
 }
 
-func (p *MSGraphClient) getDriveItem(isId bool, pathOrId string) (*DriveItem, error) {
+func (p *MSGraphClient) getDriveItem(isId bool, pathOrId string) (*DriveItem, *ApiError) {
 	var query string
 	if isId {
 		query = fmt.Sprintf("/users/%s/drive/items/%s", p.DefaultUserId, pathOrId)
 	} else {
 		query = fmt.Sprintf("/users/%s/drive/root:/%s", p.DefaultUserId, url.QueryEscape(pathOrId))
 	}
-	resp, err := p.HttpClient.R().EnableTrace().SetResult(&DriveItem{}).Get(query)
+	resp, err := p.HttpClient.R().EnableTrace().SetResult(&DriveItem{}).SetError(&ErrorWrapper{}).Get(query)
 	if err != nil {
-		return nil, err
+		return nil, p.ParseError(resp.Error().(*ErrorWrapper))
 	}
 	return resp.Result().(*DriveItem), nil
 }
 
-func (p *MSGraphClient) GetDriveItemByPath(path string) (*DriveItem, error) {
+func (p *MSGraphClient) GetDriveItemByPath(path string) (*DriveItem, *ApiError) {
 	return p.getDriveItem(false, path)
 }
 
-func (p *MSGraphClient) GetDriveItemById(id string) (*DriveItem, error) {
+func (p *MSGraphClient) GetDriveItemById(id string) (*DriveItem, *ApiError) {
 	return p.getDriveItem(true, id)
 }
