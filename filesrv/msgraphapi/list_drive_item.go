@@ -149,6 +149,9 @@ func (p *MSGraphClient) getDriveItem(isId bool, pathOrId string) (*DriveItem, *A
 	if err != nil {
 		return nil, p.ParseError(resp.Error().(*ErrorWrapper))
 	}
+	if resp.IsError() {
+		return nil, p.ParseError(resp.Error().(*ErrorWrapper))
+	}
 	return resp.Result().(*DriveItem), nil
 }
 
