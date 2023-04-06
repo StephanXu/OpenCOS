@@ -5,16 +5,16 @@ WORKDIR /usr/src
 RUN go env -w GOPROXY=https://goproxy.cn,direct
 
 COPY filesrv/go.mod filesrv/go.sum ./filesrv/
-RUN pushd filesrv \
+RUN cd filesrv \
     && go mod download \
     && go mod verify \
-    && popd
+    && cd ..
 
 COPY filehasher/go.mod ./filehasher/
-RUN pushdd filehasher \
+RUN cd filehasher \
     && go mod download \
     && go mod verify \
-    && popd
+    && cd ..
 
 COPY filesrv filehasher ./
 RUN go build ./filesrv -v -o /usr/local/bin/filesrv .
