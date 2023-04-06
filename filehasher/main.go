@@ -7,7 +7,7 @@ import (
 	"crypto/sha512"
 	"encoding/base64"
 	"encoding/json"
-	"fmt"
+	"flag"
 	"hash"
 	"io"
 	"io/ioutil"
@@ -79,7 +79,7 @@ func MultipleHash(filename string) (map[string]string, error) {
 func saveResult(obj interface{}, filename string) error {
 	fileContent, err := json.MarshalIndent(obj, "", "  ")
 	if err != nil {
-		fmt.Printf("Error encoding result file %v\n", err)
+		log.Printf("Error encoding result file %v\n", err)
 		return err
 	}
 	ioutil.WriteFile(filename, fileContent, 0666)
@@ -87,41 +87,52 @@ func saveResult(obj interface{}, filename string) error {
 }
 
 func main() {
+	var hashIndexFileName string
+	var dirBase string
+	var Rebuild bool
+	flag.StringVar(&hashIndexFileName, "i", "localhash.json", "Hash index file destination")
+	flag.StringVar(&dirBase, "d", "", "Directory of files")
+	flag.BoolVar(&Rebuild, "rebuild", false, "Force rebuilding hash index")
+	flag.Parse()
+
 	var res []FileHash
 	restoredFiles := make(map[string]FileHash)
-	if b, err := os.ReadFile("localhash.json"); err == nil {
-		var restoredList []FileHash
-		if err := json.Unmarshal(b, &restoredList); err == nil {
-			for _, item := range restoredList {
-				restoredFiles[item.Filename] = item
+	if !Rebuild {
+		if b, err := os.ReadFile(hashIndexFileName); err == nil {
+			var restoredList []FileHash
+			if err := json.Unmarshal(b, &restoredList); err == nil {
+				for _, item := range restoredList {
+					restoredFiles[item.Filename] = item
+				}
+				log.Printf("Restored %d hash of local files.\n", len(restoredFiles))
+			} else {
+				log.Printf("Restore hashes failed: %v\n", err)
 			}
-			fmt.Printf("Restored %d hash of local files.", len(restoredFiles))
 		} else {
-			fmt.Printf("Restore hashes failed: %v\n", err)
+			log.Printf("Can't find cache of hashes.\n")
 		}
 	} else {
-		fmt.Printf("Can't find cache of hashes.")
+		log.Printf("Force rebuilding hash index\n")
 	}
 
-	fileList, err := listFile("E:\\Videos")
+	fileList, err := listFile(dirBase)
 	if err != nil {
-		fmt.Printf("List file failed: %v\n", err)
+		log.Printf("List file failed: %v\n", err)
 		return
 	}
 	for _, filename := range fileList {
 		if restored, is_restored := restoredFiles[filename]; is_restored {
 			res = append(res, restored)
-			fmt.Printf("Restored: %v\n", filename)
+			log.Printf("Restored: %v\n", filename)
 			continue
 		}
 		hash, err := MultipleHash(filename)
 		if err != nil {
-			fmt.Printf("Hash file %s failed: %v", filename, err)
+			log.Printf("Hash file %s failed: %v", filename, err)
 			return
 		}
 		res = append(res, FileHash{Filename: filename, Hashes: hash})
-		fmt.Printf("Produced: %v\n", filename)
-		saveResult(res, "localhash.json")
+		log.Printf("Produced: %v\n", filename)
 	}
-
+	saveResult(res, hashIndexFileName)
 }
