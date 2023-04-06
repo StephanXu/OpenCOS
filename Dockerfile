@@ -16,7 +16,7 @@ RUN go env -w GOPROXY=https://goproxy.cn,direct
 #     && go mod verify \
 #     && cd ..
 
-COPY filesrv filehasher ./
+COPY . .
 RUN cd filesrv && go build -v -o /usr/local/bin/filesrv && cd ..
 RUN cd filehasher && go build -v -o /usr/local/bin/filehasher && cd ..
 
