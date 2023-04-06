@@ -17,8 +17,8 @@ RUN cd filehasher \
     && cd ..
 
 COPY filesrv filehasher ./
-RUN go build ./filesrv -v -o /usr/local/bin/filesrv .
-RUN go build ./filehasher -o /usr/local/bin/filehasher
+RUN go build ./filesrv -v -o /usr/local/bin/filesrv
+RUN go build ./filehasher -v -o /usr/local/bin/filehasher
 
 
 FROM golang:1.18.2-alpine3.16 as final
