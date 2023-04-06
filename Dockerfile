@@ -10,7 +10,7 @@ RUN pushd filesrv \
     && go mod verify \
     && popd
 
-COPY filehasher/go.mod filehasher/go.sum ./filehasher/
+COPY filehasher/go.mod ./filehasher/
 RUN pushdd filehasher \
     && go mod download \
     && go mod verify \
