@@ -126,9 +126,10 @@ func main() {
 			log.Printf("Restored: %v\n", filename)
 			continue
 		}
+		log.Printf("Processing: %v\n", filename)
 		hash, err := MultipleHash(filename)
 		if err != nil {
-			log.Printf("Hash file %s failed: %v", filename, err)
+			log.Fatal("Hash file %s failed: %v", filename, err)
 			return
 		}
 		res = append(res, FileHash{Filename: filename, Hashes: hash})
