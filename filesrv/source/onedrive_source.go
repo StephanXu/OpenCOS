@@ -6,6 +6,7 @@ import (
 
 	"github.com/mitchellh/mapstructure"
 	"github.com/sirupsen/logrus"
+	"xxtuitui.com/filesvr/config"
 	"xxtuitui.com/filesvr/msgraphapi"
 )
 
@@ -89,6 +90,22 @@ func (p *OneDriveSource) GetUrl(reqFileUrl string) (string, error) {
 	}
 	f, err := p.Client.GetDriveItemById(item.ItemId)
 	if err != nil {
+		if err.Code == msgraphapi.InvalidAuthenticationToken {
+			logrus.Info("OneDriveApiTokenExpired")
+			if err := p.Init(p.Context.ClientId, p.Context.ClientSecret, "https://graph.microsoft.com/.default", p.Context.TenantId); err == nil {
+				config.SaveContext()
+				logrus.WithFields(logrus.Fields{
+					"reqUrl": reqFileUrl,
+				}).Info("OneDriveRefreshTokenRetry")
+				if f, err := p.Client.GetDriveItemById(item.ItemId); err == nil {
+					return f.DownloadUrl, nil
+				}
+			}
+		}
+		logrus.WithFields(logrus.Fields{
+			"errCode": err.Code,
+			"message": err.Err,
+		}).Info("OneDriveGetUrlError")
 		return "", err
 	}
 	return f.DownloadUrl, nil
