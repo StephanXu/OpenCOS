@@ -17,6 +17,7 @@ type (
 	AliyunpanContext struct {
 		RefreshToken    string      `json:"refreshToken"`
 		DriveId         string      `json:"driveId"`
+		DeviceId        string      `json:"deviceId"`
 		LastRefreshTime time.Time   `json:"lastRefreshTime"`
 		CachedItems     []CacheItem `json:"cachedItems"`
 	}
@@ -37,6 +38,10 @@ func (p *AliyunpanSource) Restore(context *CacheSourceContext) error {
 	if len(p.Context.RefreshToken) == 0 {
 		return errors.New("EmptyRefreshToken")
 	}
+	logrus.WithFields(logrus.Fields{
+		"refreshToken": p.Context.RefreshToken,
+		"deviceId":     p.Context.DeviceId,
+	}).Info("AliyunpanSourceConfigLoaded")
 	return p.Init(p.Context.RefreshToken)
 }
 
@@ -49,18 +54,40 @@ func (p *AliyunpanSource) Init(refreshToken string) error {
 		return err
 	}
 	p.Context.RefreshToken = webToken.RefreshToken
-	p.client = aliyunpan.NewPanClient(*webToken, aliyunpan.AppLoginToken{})
+	appConfig := aliyunpan.AppConfig{
+		AppId:     "25dzX3vbYqktVxxX",
+		DeviceId:  p.Context.DeviceId,
+		UserId:    "",
+		Nonce:     0,
+		PublicKey: "",
+	}
+	p.client = aliyunpan.NewPanClient(*webToken, aliyunpan.AppLoginToken{}, appConfig, aliyunpan.SessionConfig{
+		DeviceName: "Chrome浏览器",
+		ModelName:  "Windows网页版",
+	})
 	user, err := p.client.GetUserInfo()
 	if err != nil {
 		return err
 	}
 	p.Context.DriveId = user.FileDriveId
 	p.Context.LastRefreshTime = time.Now()
+	appConfig.UserId = user.UserId
+	p.client.UpdateAppConfig(appConfig)
 	logrus.WithFields(logrus.Fields{
 		"originRefreshToken": refreshToken,
 		"latestRefreshToken": p.Context.RefreshToken,
 		"driveId":            p.Context.DriveId,
+		"userId":             user.UserId,
 	}).Info("AliyunSourceInitialized")
+	r, err := p.client.CreateSession(nil)
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"error": err.Error(),
+		}).Error("AliyunSourceCreateSessionSuccess")
+	}
+	if r != nil && !r.Result {
+		logrus.Error("AliyunSourceInitializeFailedUnknown")
+	}
 	return nil
 }
 
