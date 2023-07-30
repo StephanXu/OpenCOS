@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/mitchellh/mapstructure"
@@ -107,13 +108,24 @@ func (p *AliyunpanSource) updateToken(refreshToken string) error {
 
 func (p *AliyunpanSource) MappingFile(reqFileUrl string, localName string, hashes map[string]string) error {
 	for _, f := range p.Context.CachedItems {
-		if !f.IsHashEqual(hashes) {
-			continue
+		if f.CachedPath == localName {
+			p.mapping[reqFileUrl] = &f
+			return nil
 		}
-		p.mapping[reqFileUrl] = &f
-		return nil
+		// if !f.IsHashEqual(hashes) {
+		// continue
+		// }
+		// p.mapping[reqFileUrl] = &f
+		// return nil
 	}
-	return errors.New("CachedFileNotFound")
+	p.Context.CachedItems = append(p.Context.CachedItems, CacheItem{
+		ItemId:     "",
+		Hashes:     map[string]string{},
+		CachedPath: localName,
+	})
+	p.mapping[reqFileUrl] = &p.Context.CachedItems[len(p.Context.CachedItems)-1]
+	return nil
+	// return errors.New("CachedFileNotFound")
 }
 
 func (p *AliyunpanSource) GetUrl(reqFileUrl string) (string, error) {
@@ -121,6 +133,13 @@ func (p *AliyunpanSource) GetUrl(reqFileUrl string) (string, error) {
 	if value, ok := p.mapping[reqFileUrl]; ok {
 		item = value
 	}
+	url := "http://pan.xxtuitui.com" + strings.Replace(item.CachedPath, "/drive/drive", "", 1)
+	logrus.WithFields(logrus.Fields{
+		"reqFileUrl": reqFileUrl,
+		"url":        url,
+	})
+	return url, nil
+
 	query := aliyunpan.GetFileDownloadUrlParam{
 		DriveId:   p.Context.DriveId,
 		FileId:    item.ItemId,
